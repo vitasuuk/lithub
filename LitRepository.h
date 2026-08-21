@@ -69,34 +69,29 @@ class LitRepository {
                                  Paths&&... path) {
     std::filesystem::path full_path = RepoPath(path...);
 
-      // If such path already exists in filesystem, check
-      // if it is directory
-      if (std::filesystem::exists(full_path)) {
-        if (std::filesystem::is_directory(full_path)) {
-          return full_path;
-        } else {
-          throw std::runtime_error("Not a directory: " + full_path.string());
-        }
-      }
-      
-      // Since it doesn't exist, optionally create directories
-      if (mkdir) {
-        std::filesystem::create_directories(full_path);
+    // If such path already exists in filesystem, check
+    // if it is directory
+    if (std::filesystem::exists(full_path)) {
+      if (std::filesystem::is_directory(full_path)) {
         return full_path;
+      } else {
+          throw std::runtime_error("Not a directory: " + full_path.string());
       }
+    }
+      
+    // Since it doesn't exist, optionally create directories
+    if (mkdir) {
+      std::filesystem::create_directories(full_path);
+      return full_path;
+    }
 
-      return {}; // python's None equivalent
+    return {};
   }
 
  private:
   std::filesystem::path worktree_;
   std::filesystem::path gitdir_;
-  
-  // Config fields [TBD if separate structure]
-  int repo_format_version_ = 0;
-  bool file_mode_ = false;
-  bool bare_ = false;
+  LitConfig config_;
 };
-
 
 #endif  // LIT_REPOSITORY_H_
