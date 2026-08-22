@@ -81,3 +81,13 @@ string LitConfig::Get(const string& section,
                     const string& key) const {
   return cf_sections_.at(section).at(key);
 }
+
+LitConfig LitConfig::DefaultConfig() {
+  LitConfig config;
+
+  config.Set("core", "repositoryformatversion", "0");
+  config.Set("core", "filemode", "false");
+  config.Set("core", "bare", "false");
+
+  return config;
+}

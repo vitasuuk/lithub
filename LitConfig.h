@@ -19,6 +19,7 @@ class LitConfig {
            const std::string& key,
            const std::string& value);
 
+  static LitConfig DefaultConfig();
 
  private:
   using Section = std::map<std::string, std::string>;
