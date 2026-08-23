@@ -1,7 +1,10 @@
 #ifndef LIT_REPOSITORY_H_
 #define LIT_REPOSITORY_H_
 
+#include "LitConfig.h"
+
 #include <filesystem>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -17,9 +20,9 @@ class LitRepository {
   static LitRepository RepoCreate(const std::filesystem::path& path);
 
   // Starting from path, recursively search upward for a repository
-  // (location which has .git as direct child)
-  static LitRepository RepoFind(const std::filesystem::path& path,
-                                bool required = true);
+  // (location which has .lit as direct child)
+  static std::optional<LitRepository> RepoFind(const std::filesystem::path& path,
+                                               bool required = true);
   
   /*
     Implementations of variadic methods in .h file for other
@@ -27,13 +30,13 @@ class LitRepository {
     template methods between .cc files.
   */
   
-  // Returns a path relative to .git directory
+  // Returns a path relative to .lit directory
   // Example:
   //  repo.RepoPath("something", "from", "project")
-  // Result: <worktreee>/.git/something/from/project
+  // Result: <worktreee>/.lit/something/from/project
   template <typename... Paths> // variadic template
   std::filesystem::path RepoPath(Paths&&... path) {
-    std::filesystem::path result = gitdir_;
+    std::filesystem::path result = litdir_;
     (result /= ... /= path); // folded statement
 
     return result;
@@ -63,7 +66,7 @@ class LitRepository {
   }
 
   // Returns a path to an existing directory inside the repository's 
-  // .git directory. If mkdir is true creates directories and returns the path.
+  // .lit directory. If mkdir is true creates directories and returns the path.
   template <typename... Paths>
   std::filesystem::path RepoDir(bool mkdir = false,
                                  Paths&&... path) {
@@ -90,7 +93,7 @@ class LitRepository {
 
  private:
   std::filesystem::path worktree_;
-  std::filesystem::path gitdir_;
+  std::filesystem::path litdir_;
   LitConfig config_;
 };
 

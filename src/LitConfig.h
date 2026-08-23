@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <map>
+#include <string>
 
 class LitConfig {
  public:
@@ -32,4 +33,4 @@ class LitConfig {
   std::map<std::string, Section> cf_sections_;
 };
 
-#endif
+#endif  // LIT_CONFIG_H_
