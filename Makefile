@@ -7,7 +7,7 @@ SOURCES = src/main.cc src/LitCommands.cc src/LitRepository.cc src/LitConfig.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) -lcrypto -lz
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@
