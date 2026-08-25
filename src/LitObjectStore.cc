@@ -7,9 +7,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -160,8 +163,98 @@ std::string ObjectWrite(const LitObject& object, LitRepository* repo) {
 
 std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
                                       const std::string& sha) {
+  if (sha.size() != 40) {
+    throw std::runtime_error("Invalid SHA1 hashing.");
+  }
+
+  path obj_path = repo.RepoPath("objects", sha.substr(0,2), sha.substr(2));
+
+  if (!std::filesystem::is_regular_file(obj_path)) {
+    return nullptr;
+  }
+
+  std::ifstream file(obj_path, std::ios::binary);
+  if (!file) {
+    throw std::runtime_error("Failed to open object: " + obj_path.string());
+  }
+
+  file.seekg(0, std::ios::end);
+  std::streamsize file_size = file.tellg();
+
+  file.seekg(0, std::ios::beg);
+  if (file_size < 0) {
+    throw std::runtime_error("Failed to determine obj file size: " + 
+        obj_path.string());
+  }
+
+  // Read compressed data
+  bytes compressed(static_cast<std::size_t>(file_size));
   
+  if (file_size > 0) {
+    file.read(reinterpret_cast<char*>(compressed.data()), file_size);
+
+    if (!file) {
+      throw std::runtime_error("Failed to read object: " + obj_path.string()); 
+    }
+  }
+
+  // Decompress to internal object representation:
+  bytes raw = Decompress(compressed);
+
+  // iterators to construct the string later
+  auto space = std::find(raw.begin(), raw.end(),
+      static_cast<std::uint8_t>(' '));
+  if (space == raw.end()) {
+    throw std::runtime_error("Malformed object: " + sha +
+        " has no format separator");
+  }
+
+  std::string format(raw.begin(), space);
+
+  auto null_byte = std::find(space + 1, raw.end(), 
+      static_cast<std::uint8_t>('\0'));
+  if (null_byte == raw.end()) {
+    throw std::runtime_error("Malformed object: " + sha +
+        " has no null separator");
+  }
+
+  std::string size_field(space + 1, null_byte);
+  std::size_t expected_size = std::stoull(size_field);
+
+  bytes data(null_byte + 1, raw.end());
+
+  if (expected_size != data.size()) {
+    throw std::runtime_error("Malformed object: " + sha +
+        " has unexpected length");
+  }
+
+  // Return the type of object according to the format
+  if (format == "blob") {
+    return std::make_unique<LitBlob>(data);
+  }
+
+
+  throw std::runtime_error("Unsupported object type: " + format);
 }
 
+std::string ObjectFind(LitRepository&, const std::string& name,
+                       const std::string&, bool) {
+  return name;
+}
 
+std::string ObjectHash(std::istream& input, const std::string& format,
+                       LitRepository* repo) {
+  bytes data;
 
+  char byte;
+  while(input.get(byte)) {
+    data.push_back(static_cast<std::uint8_t>(byte));
+  }
+
+  if (format == "blob") {
+    LitBlob obj(data);
+    return ObjectWrite(obj, repo);
+  }
+
+  throw std::runtime_error("Unknown object type: " + format);
+}

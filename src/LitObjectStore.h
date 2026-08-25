@@ -8,8 +8,9 @@
 
 #include "LitObject.h"
 
-#include <memory>
 #include <string>
+#include <memory>
+#include <istream>
 
 class LitRepository;
 
@@ -19,4 +20,10 @@ std::string ObjectWrite(const LitObject& object,
 std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
                                       const std::string& sha);
 
+std::string ObjectFind(LitRepository& repo, const std::string& name,
+                       const std::string& format, bool follow = true);
+
+std::string ObjectHash(std::istream& input, const std::string& format,
+                       LitRepository* repo = nullptr);
+		  
 #endif  // LIT_OBJECT_STORE_H_

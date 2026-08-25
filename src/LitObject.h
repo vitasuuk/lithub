@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-using bytes = std::vector<uint8_t>;
+using bytes = std::vector<std::uint8_t>;
 
 class LitObject {
  public:

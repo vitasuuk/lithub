@@ -20,7 +20,8 @@ class LitRepository {
   static LitRepository RepoCreate(const std::filesystem::path& path);
 
   // Starting from path, recursively search upward for a repository
-  // (location which has .lit as direct child)
+  // (location which has .lit as direct child).
+  // Required default = true: .lit must exist at given path
   static std::optional<LitRepository> RepoFind(const std::filesystem::path& path,
                                                bool required = true);
   
