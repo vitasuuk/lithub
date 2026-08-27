@@ -6,9 +6,10 @@
 
 int CmdInit(const std::filesystem::path& path);
 
-int CmdCatFile(const std::string& type, const std::string& object);
+int CmdCatFile(const std::string& format, const std::string& object);
 
-int CmdHashObject(const std::string& format, const path& path,
-	              bool store = false);
+int CmdHashObject(const std::string& format,
+	              const std::filesystem::path& file_path,
+	              bool write);
 
 #endif  // LIT_COMMANDS_H_

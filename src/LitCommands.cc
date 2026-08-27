@@ -12,11 +12,11 @@ int CmdInit(const path& path) {
   return 0;
 }
 
-int CmdCatFile(const std::string& type, const std::string& object) {
+int CmdCatFile(const std::string& format, const std::string& object) {
   auto repo_opt = LitRepository::RepoFind(".");
   LitRepository& repo = repo_opt.value();
 
-  std::string sha = ObjectFind(repo, object, type);
+  std::string sha = ObjectFind(repo, object, format);
 
   std::unique_ptr<LitObject> obj = ObjectRead(repo, sha);
 
@@ -32,20 +32,20 @@ int CmdCatFile(const std::string& type, const std::string& object) {
   return 0;
 }
 
-int CmdHashObject(const std::string& format, const path& path,
-                  bool store) {
+int CmdHashObject(const std::string& format, const path& file_path,
+                  bool write) {
   std::optional<LitRepository> repo_opt;
   LitRepository* repo = nullptr;
 
-  if (store) {
+  if (write) {
     repo_opt = LitRepository::RepoFind(".");
     repo = &repo_opt.value();
   }
 
-  std::ifstream file(path, std::ios::binary);
+  std::ifstream file(file_path, std::ios::binary);
   
   if (!file) {
-    throw std::runtime_error("Failed to open file: " + path.string());
+    throw std::runtime_error("Failed to open file: " + file_path.string());
   }
 
   std::string sha = ObjectHash(file, format, repo);

@@ -1,5 +1,8 @@
 #include "LitCommands.h"
 
+#include <argparse/argparse.hpp>
+
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -10,83 +13,71 @@ using std::filesystem::path;
 constexpr char kUsageMessage[] = "usage: lithub <command> [args]\n";
 
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
-    std::cerr << kUsageMessage;
-    return 1;
-  }
+  argparse::ArgumentParser program("lithub");
 
-  std::string command = argv[1];
+  // init
+  argparse::ArgumentParser init_command("init");
+  init_command.add_argument("directory")
+    .nargs(argparse::nargs_pattern::optional)
+    .default_value(std::string("."));
+
+  // cat-file
+  argparse::ArgumentParser cat_file_command("cat-file");
+  cat_file_command.add_argument("type")
+    .choices("blob", "commit", "tree", "tag");
+  cat_file_command.add_argument("object");
+
+  // hash-object
+  argparse::ArgumentParser hash_object_command("hash-object");
+  hash_object_command.add_argument("-w")
+    .default_value(false)
+    .implicit_value(true);
+
+  hash_object_command.add_argument("-t")
+    .default_value(std::string("blob"))
+    .choices("blob", "commit", "tree", "tag");
+
+  hash_object_command.add_argument("file");
+
+  program.add_subparser(init_command);
+  program.add_subparser(cat_file_command);
+  program.add_subparser(hash_object_command);
 
   try {
-    if (command == "init") {
-      if (argc > 3) {
-        std::cerr << "usage: lithub init [directory]\n";
-        return 1;
-      }
+    program.parse_args(argc, argv);
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << '\n' << program;
+    return EXIT_FAILURE;
+  }
 
-      path repo_path = ".";
-
-      if (argc == 3) {
-        repo_path = argv[2];
-      }
+  try {
+    if (program.is_subcommand_used("init")) {
+      path repo_path = init_command.get<std::string>("directory");
 
       return CmdInit(repo_path);
+    }
 
-	  } else if (command == "cat-file") {
-      if (argc != 4) {
-        std::cerr << "usage: lithub cat-file <type> <object>\n";
-        return 1;
-      }
+    if (program.is_subcommand_used("cat-file")) {
+      std::string format = cat_file_command.get<std::string>("type");
+      std::string object = cat_file_command.get<std::string>("object");
 
-      std::string type = argv[2];
-      std::string object = argv [3];
+      return CmdCatFile(format, object);
+    }
 
-      if (type != "blob" && type != "commit" &&
-          type != "tree" && type != "tag") {
-        std::cerr << "Invalid object type: " + type << '\n';
-        return 1;
-	    }
-
-      return CmdCatFile(type, object);
-
-	  } else if (command == "hash-object") {
-      bool write = false;
-      std::string format = "blob";
-      path file_path;
-      bool has_file = false;
-
-      for (int i = 2; i < argc; i++) {
-        std::string arg = argv[i];
-        if (arg == "-w") {
-          write = true;
-        } else if (arg == "-t") {
-          if (i + 1 >= argc) {
-            std::cerr << "usage: lithub hash-object [-w] [-t TYPE] FILE\n";
-            return 1;
-          }
-
-          format = argv[++i];
-        } else if (!has_file) {
-          file_path = arg;
-          has_file = true;
-        } else {
-          std::cerr << "usage: lithub hash-object [-w] [-t TYPE] FILE\n";
-          return 1;
-        }
-      }
-
-      if(!has_file) {
-        std::cerr << "usage: lithub hash-object [-w] [-t TYPE] FILE\n";
-        return 1;
-      }
+    if (program.is_subcommand_used("hash-object")) {
+      bool write = hash_object_command.get<bool>("-w");
+      std::string format = hash_object_command.get<std::string>("-t");
+      path file_path = hash_object_command.get<std::string>("file");
 
       return CmdHashObject(format, file_path, write);
     }
 
-    std::cerr << "Unknown command: " << command << '\n';
-    return 1;
+    std::cerr << program;
+    return EXIT_FAILURE;
+
   } catch (const std::exception& e) {
-	  std::cerr << e.what() << '\n';
-    return 1;
+    std::cerr << e.what() << '\n';
+
+    return EXIT_FAILURE;
   }
 }
