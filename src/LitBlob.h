@@ -18,4 +18,5 @@ class LitBlob : public LitObject {
  private:
   bytes data_;
 };
+
 #endif
