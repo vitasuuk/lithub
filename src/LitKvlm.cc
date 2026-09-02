@@ -46,7 +46,7 @@ Kvlm KvlmParse(const bytes& raw) {
 
 	  // Remove possible continuation line ' ' markers
     // Note: questionable efficiency
-    for (std::size_t i = 0; i < field.value.size(); i++) {
+    for (std::size_t i = 0; i < field.value.size() - 1; i++) {
       if (field.value[i] == '\n' && field.value[i + 1] == ' ') {
         field.value.erase(field.value.begin() + i + 1);
       }
@@ -71,7 +71,7 @@ bytes KvlmSerialize(const Kvlm& kvlm) {
     for (std::uint8_t byte : field.value) {
       result.push_back(byte);
 
-      if (byte == 'n') {
+      if (byte == '\n') {
         result.push_back(' ');
       }
     }

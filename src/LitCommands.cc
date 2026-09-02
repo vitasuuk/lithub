@@ -2,6 +2,8 @@
 #include "LitRepository.h"
 #include "LitObjectStore.h"
 
+#include <algorithm>
+
 #include <fstream>
 #include <iostream>
 
@@ -52,4 +54,14 @@ int CmdHashObject(const std::string& format, const path& file_path,
 
   std::cout << sha << '\n';
   return 0;
+}
+
+int CmdLog (const std::string& commit_point) {
+
+}
+
+namespace {
+  int CmdRecurseLog() {
+	
+  }
 }

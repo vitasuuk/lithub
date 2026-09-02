@@ -6,18 +6,43 @@
 #include <string>
 #include <vector>
 
+/*
+  Metadata field for a committ/tag KVLM payload.
+  Format:
+    parent 010201 -> key = parent, value = 010201
+  !!! Field order must be preserved, same keys may appear multiple times !!!
+*/
 struct KvlmField {
   bytes key;
   bytes value;
 };
 
+/*
+  Parsed representation of Lit's commit/tag payload format
+
+  tree 29ff16c9c14e2652b22f8b78bb08a5a07930c147
+  parent 206941306e8a8af65b66eaaaea388a7ae24d49a0
+  author Thibault Polge <thibault@thb.lt> 1527025023 +0200
+  committer Thibault Polge <thibault@thb.lt> 1527025044 +0200
+  gpgsig -----BEGIN PGP SIGNATURE-----
+
+   iQIzBAABCAAdFiEExwXquOM8bWb4Q2zVGxM2FxoLkGQFAlsEjZQACgkQGxM2FxoL
+   kGQdcBAAqPP+ln4nGDd2gETXjvOpOxLzIMEw4A9gU6CzWzm+oB8mEIKyaH0UFIPh
+
+   -----END PGP SIGNATURE-----
+
+   Create first draft
+*/
 struct Kvlm {
   std::vector<KvlmField> fields;
   bytes message;
 };
 
+// Parse raw commit/tag payload bytes into ordered KVLM fields and message.
+// Handles multiline values, removes ' ' continuation markers before storing.
 Kvlm KvlmParse(const bytes& raw);
 
+// Convert stored KVLM back into the commit/tag payload format.
 bytes KvlmSerialize(const Kvlm& kvlm);
 
 #endif  // LIT_KVLM_H_

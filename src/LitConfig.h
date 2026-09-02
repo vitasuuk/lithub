@@ -5,21 +5,28 @@
 #include <map>
 #include <string>
 
+// INI-style configuration reader/writer used for .lit/config
 class LitConfig {
  public:
   LitConfig() = default;
 
+  // Parses INI-style config file into in-memory config representation.
   void Read(const std::filesystem::path& path);
 
+  // Writes the configuration bacj in INI format.
   void Write(const std::filesystem::path& path) const;
 
+  // Returns the value from given section and key.
+  // Throws if no such key exists.
   std::string Get(const std::string& section,
                   const std::string& key) const;
 
+  // Creates configuration key-value mapping / replaces value of existing one.
   void Set(const std::string& section,
            const std::string& key,
            const std::string& value);
-
+  
+  // Builds and returns config object with default values.
   static LitConfig DefaultConfig();
 
  private:

@@ -1,5 +1,6 @@
 #include "LitObjectStore.h"
 #include "LitBlob.h"
+#include "LitCommit.h"
 #include "LitRepository.h"
 
 #include <openssl/sha.h>
@@ -22,7 +23,10 @@ using std::filesystem::path;
   Since C++ doesn't have built in hashing like SHA1 and z compressing,
   we have to import and link libraries, and use them to write similar
   functionality. 
-  [Warning: Sha1 is considered unsafe, consider upgrading to higher standard]
+  
+  Lit currently follows Git's SHA1 object format. OpenSSL's low-level
+  SHA1_Init/Update/Final API is deprecated; can later be replaced with
+  the EVP API while still computing SHA1.
 */
 namespace {
 
@@ -130,7 +134,7 @@ std::string ObjectWrite(const LitObject& object, LitRepository* repo) {
   result.insert(result.end(), header.begin(), header.end());
   result.insert(result.end(), data.begin(), data.end());
 
-  // Hash uncompressed git object's represendation (<type> <size>\0<payload>)
+  // Hash uncompressed lit object's represendation (<type> <size>\0<payload>)
   std::string sha = ComputeSha1(result);
 
   // if repo == null ptr, only hash without storing.
@@ -231,8 +235,9 @@ std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
   // Return the type of object according to the format
   if (format == "blob") {
     return std::make_unique<LitBlob>(data);
+  } else if (format == "commit") {
+	return std::make_unique<LitCommit>(data);
   }
-
 
   throw std::runtime_error("Unsupported object type: " + format);
 }

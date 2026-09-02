@@ -9,9 +9,9 @@ bytes LitCommit::Serialize() const {
 }
 
 void LitCommit::Deserialize(const bytes& data) {
-  KvlmParse(data);
+  kvlm_ = KvlmParse(data);
 }
 
-std::string_view Format() {
+std::string_view LitCommit::Format() const {
   return "commit";
 }

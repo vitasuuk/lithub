@@ -8,20 +8,28 @@
 #include <stdexcept>
 #include <string>
 
+/*
+  Represents one Lit repository in file system.
+  This class is responsible solely for repository layout and path operations.
+*/
 class LitRepository {
  public:
-  // Constructor 
-  // (explicit to ensure object isn't initialized implicitly.
-  // Ex.: LitRepository = "path";)
+  // Open/represent an existing Lit repository. 
+  // When force == true, lit requires .lit to exist, reads .lit/config,
+  // validates format version
+  //      force == false is used internally by RepoCreate before .lit exists.
   explicit LitRepository(const std::filesystem::path& path,
                          bool force = false);
 
-  // Create a new repository at path
+  // Initializes a new Lit repository at path.
+  // Creates the .lit directory structure and default metadata files, then
+  // returns a LitRepository object representing it.
   static LitRepository RepoCreate(const std::filesystem::path& path);
 
   // Starting from path, recursively search upward for a repository
-  // (location which has .lit as direct child).
-  // Required default = true: .lit must exist at given path
+  // (parent directory of .lit)
+  // When required == true, throws if not found
+  // Otherwise, returns std::nullopt.
   static std::optional<LitRepository> RepoFind(const std::filesystem::path& path,
                                                bool required = true);
   
@@ -42,6 +50,7 @@ class LitRepository {
 
     return result;
   }
+
   // Returns a path to a file, optionally creates directories.
   // Note: creates directories up to the last component.
   template <typename... Paths>
