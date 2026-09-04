@@ -20,4 +20,6 @@ int CmdHashObject(const std::string& format,
 // lithub log - walks commit ancestry and prints commit history.
 int CmdLog(const std::string& commit_point);
 
+int CmdLsTree(const std::string& tree_sha, bool recurse);
+
 #endif  // LIT_COMMANDS_H_

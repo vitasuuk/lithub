@@ -1,6 +1,7 @@
 #include "LitObjectStore.h"
 #include "LitBlob.h"
 #include "LitCommit.h"
+#include "LitTree.h"
 #include "LitRepository.h"
 
 #include <openssl/sha.h>
@@ -237,6 +238,8 @@ std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
     return std::make_unique<LitBlob>(data);
   } else if (format == "commit") {
 	return std::make_unique<LitCommit>(data);
+  } else if (format == "tree") {
+	return std::make_unique<LitTree>(data);
   }
 
   throw std::runtime_error("Unsupported object type: " + format);
