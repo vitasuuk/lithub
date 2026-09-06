@@ -30,6 +30,7 @@ class LitTree : public LitObject {
 
   void Deserialize(const bytes& data);
 
+  // Need to expose internal representation of tree for commands.
   const std::vector<TreeEntry>& GetTreeEntries() const {
     return entries_;
   }

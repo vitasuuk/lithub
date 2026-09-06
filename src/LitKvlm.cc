@@ -9,7 +9,7 @@ Kvlm KvlmParse(const bytes& raw) {
 
   while (pos < raw.size()) {
     if (raw[pos] == '\n') {
-      result.message = bytes(raw.begin() + pos + 1, raw.end());
+      result.message = std::string(raw.begin() + pos + 1, raw.end());
       break;
     }
 
@@ -41,14 +41,14 @@ Kvlm KvlmParse(const bytes& raw) {
 
     KvlmField field;
 
-    field.key = bytes(raw.begin() + pos, raw.begin() + space_pos);
-    field.value = bytes(raw.begin() + space_pos + 1, raw.begin() + newline_pos);
+    field.key = std::string(raw.begin() + pos, raw.begin() + space_pos);
+    field.value = std::string(raw.begin() + space_pos + 1, raw.begin() + newline_pos);
 
-	  // Remove possible continuation line ' ' markers
+    // Remove possible continuation line ' ' markers
     // Note: questionable efficiency
     for (std::size_t i = 0; i < field.value.size() - 1; i++) {
       if (field.value[i] == '\n' && field.value[i + 1] == ' ') {
-        field.value.erase(field.value.begin() + i + 1);
+        field.value.erase(i + 1, 1);
       }
     }
 
@@ -68,10 +68,10 @@ bytes KvlmSerialize(const Kvlm& kvlm) {
     result.push_back(' ');
 
     // Inner loop to have add spaces for multi-line value/s
-    for (std::uint8_t byte : field.value) {
-      result.push_back(byte);
+    for (char ch : field.value) {
+      result.push_back(static_cast<std::uint8_t>(ch));
 
-      if (byte == '\n') {
+      if (ch == '\n') {
         result.push_back(' ');
       }
     }
@@ -83,4 +83,26 @@ bytes KvlmSerialize(const Kvlm& kvlm) {
   result.insert(result.end(), kvlm.message.begin(), kvlm.message.end());
 
   return result;
+}
+
+const std::string& Kvlm::KvlmGetValue(std::string_view key) const {
+  for (const KvlmField& field : fields) {
+    if (field.key == key) {
+      return field.value;
+    }
+  }
+
+  throw std::runtime_error("KVLM field not found: " + std::string(key));
+}
+
+std::vector<const std::string*> Kvlm::KvlmGetValues(
+                                      std::string_view key) const {
+  std::vector<const std::string*> values;
+  for (const KvlmField& field : fields) {
+    if (field.key == key) {
+      values.push_back(&field.value);
+    }
+  }
+
+  return values;
 }

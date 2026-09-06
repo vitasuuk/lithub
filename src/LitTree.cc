@@ -28,6 +28,19 @@ namespace {
     return result;
   }
 
+  std::string BytesToHex(bytes::const_iterator begin,
+                         bytes::const_iterator end) {
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+
+    for (auto it = begin; it != end; ++it) {
+      oss << std::setw(2)
+          << static_cast<unsigned int>(*it);
+    }
+
+    return oss.str();
+  }
+
   TreeEntry ParseEntry(const bytes& data, std::size_t& pos) {
     TreeEntry entry;
 
@@ -42,14 +55,8 @@ namespace {
     entry.path = std::string(space_pos + 1, null_pos);
 
     auto sha_end = null_pos + 21;
-    std::ostringstream oss;
-    oss << std::hex << std::setfill('0');
 
-    for (auto pos = null_pos + 1; pos != sha_end; pos++) {
-      oss << std::setw(2) << static_cast<unsigned int>(*pos);
-    }
-
-    entry.sha = oss.str();
+    entry.sha = BytesToHex(null_pos + 1, sha_end);
 
     pos = static_cast<std::size_t>(sha_end - data.begin());
     return entry;
@@ -107,7 +114,7 @@ void LitTree::Deserialize(const bytes& data) {
   std::size_t end = data.size();
 
   while (pos < end) {
-    entries_.push_back(ParseEntry(data, pos));
+    entries_.push_back(ParseEntry(data, pos)); // decodes from bytes to hex
   }
 }
 

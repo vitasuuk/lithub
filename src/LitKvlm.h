@@ -13,8 +13,8 @@
   !!! Field order must be preserved, same keys may appear multiple times !!!
 */
 struct KvlmField {
-  bytes key;
-  bytes value;
+  std::string key;
+  std::string value;
 };
 
 /*
@@ -35,7 +35,17 @@ struct KvlmField {
 */
 struct Kvlm {
   std::vector<KvlmField> fields;
-  bytes message;
+  std::string message;
+
+  // Returns first value associated with passed key.
+  // Throws if no key found.
+  const std::string& KvlmGetValue(std::string_view key) const;
+
+  // Returns all values associated with the key.
+  // Used, for example, in CmdLog to get multiple parents in case there was
+  // a merge.
+  // Returns empty vector when no key found.
+  std::vector<const std::string*> KvlmGetValues(std::string_view key) const;
 };
 
 // Parse raw commit/tag payload bytes into ordered KVLM fields and message.

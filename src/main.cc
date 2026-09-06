@@ -39,9 +39,28 @@ int main(int argc, char* argv[]) {
 
   hash_object_command.add_argument("file");
 
+  // log
+  argparse::ArgumentParser log_command("log");
+  log_command.add_argument("commit");
+
+  // ls-tree
+  argparse::ArgumentParser ls_tree_command("ls-tree");
+  ls_tree_command.add_argument("-r")
+    .default_value(false)
+    .implicit_value(true);
+  ls_tree_command.add_argument("tree");
+
+  // checkout
+  argparse::ArgumentParser checkout_command("checkout");
+  checkout_command.add_argument("commit");
+  checkout_command.add_argument("dir_path");
+  
   program.add_subparser(init_command);
   program.add_subparser(cat_file_command);
   program.add_subparser(hash_object_command);
+  program.add_subparser(log_command);
+  program.add_subparser(ls_tree_command);
+  program.add_subparser(checkout_command);
 
   try {
     program.parse_args(argc, argv);
@@ -70,6 +89,20 @@ int main(int argc, char* argv[]) {
       path file_path = hash_object_command.get<std::string>("file");
 
       return CmdHashObject(format, file_path, write);
+    }
+
+	  if (program.is_subcommand_used("ls-tree")) {
+      bool recurse = ls_tree_command.get<bool>("-r");
+      std::string tree = ls_tree_command.get<std::string>("tree");
+
+      return CmdLsTree(tree, recurse);
+	  }
+
+    if (program.is_subcommand_used("checkout")) {
+      std::string commit = checkout_command.get<std::string>("commit");
+      path dir_path = checkout_command.get<std::string>("dir_path");
+
+      return CmdCheckout(commit, dir_path);
     }
 
     std::cerr << program;

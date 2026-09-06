@@ -1,3 +1,4 @@
+#include "LitBlob.h"
 #include "LitCommands.h"
 #include "LitCommit.h"
 #include "LitRepository.h"
@@ -13,10 +14,14 @@ using std::filesystem::path;
 
 // Private helper methods performing recursion.
 namespace {
-  void CmdLogRecurse();
+  void CmdLogRecurse(LitRepository& repo, const std::string commit_sha);
 
   void CmdLsTreeRecurse(LitRepository& repo, const std::string& tree_sha,
                         bool recurse, const std::string& prefix = "");
+
+  void CmdCheckoutRecurse(LitRepository& repo,
+                          LitTree& tree,
+                          const std::filesystem::path& dir_path);
 }
 
 int CmdInit(const path& path) {
@@ -67,10 +72,12 @@ int CmdHashObject(const std::string& format, const path& file_path,
 }
 
 int CmdLog (const std::string& commit_point) {
+  std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
+  LitRepository repo = repo_opt.value();
 
+  
 }
 
-// Simplified version without resolving reference.
 int CmdLsTree (const std::string& tree_sha, bool recurse) {
   std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
   LitRepository& repo = repo_opt.value();
@@ -80,7 +87,48 @@ int CmdLsTree (const std::string& tree_sha, bool recurse) {
   return 0;
 }
 
+int CmdCheckout(const std::string& commit_sha, 
+                const std::filesystem::path& dir_path) {
+  std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
+  LitRepository& repo = repo_opt.value();
+
+  std::unique_ptr<LitObject> obj = ObjectRead(repo, commit_sha);
+  
+  // if the object is commit, we grab its tree
+  if (obj->Format() == "commit") {
+    LitCommit* commit_obj = dynamic_cast<LitCommit*>(obj.get());
+    obj = ObjectRead(repo, commit_obj->GetTreeSha());
+  }
+
+  LitTree* tree_obj = dynamic_cast<LitTree*>(obj.get());
+  if (tree_obj == nullptr) {
+    throw std::runtime_error("Cannot resolve to a tree.");
+  }
+
+  // Verify that given path is an empty directory / create such
+  if (std::filesystem::exists(dir_path)) {
+    if (!std::filesystem::is_directory(dir_path)) {
+      throw std::runtime_error("Not a directory: " + dir_path.string());
+    }
+    if (!std::filesystem::is_empty(dir_path)) {
+      throw std::runtime_error("Not an empty directory: " + dir_path.string());
+    }
+  } else {
+    std::filesystem::create_directories(dir_path);
+  }
+ 
+  // Recurse to reconstruct full worktree
+  CmdCheckoutRecurse(repo, *tree_obj, dir_path);
+
+  return 0;
+}
+
 namespace {
+
+  void CmdLogRecurse(LitRepository& repo, const std::string commit_sha) {
+    
+  }
+
   void CmdLsTreeRecurse(LitRepository& repo, const std::string& tree_sha,
                     bool recurse, const std::string& prefix) {
 	  std::unique_ptr<LitObject> obj = ObjectRead(repo, tree_sha);
@@ -116,7 +164,37 @@ namespace {
     }
   }
 
-  void CmdLogRecurse() {
-    
+  void CmdCheckoutRecurse(LitRepository& repo,
+                          LitTree& tree,
+                          const std::filesystem::path& dir_path) {
+    for (const TreeEntry& entry : tree.GetTreeEntries()) {
+      std::unique_ptr<LitObject> obj = ObjectRead(repo, entry.sha);
+      path item_path = dir_path / entry.path;
+
+      if (obj->Format() == "tree") {
+        std::filesystem::create_directory(item_path);
+        LitTree* tree_obj = dynamic_cast<LitTree*>(obj.get());
+
+        CmdCheckoutRecurse(repo, *tree_obj, item_path);
+      } else if (obj->Format() == "blob") {
+        LitBlob* blob_obj = dynamic_cast<LitBlob*>(obj.get());
+        bytes data = blob_obj->Serialize();
+        
+        std::ofstream file(item_path);
+        if (!file) {
+          throw std::runtime_error("Failed to create a file: " +
+              item_path.string());
+        }
+
+        file.write(reinterpret_cast<const char*>(data.data()),
+            static_cast<std::streamsize>(data.size()));
+
+        if (!file) {
+          throw std::runtime_error("Failed to write file: " +
+              item_path.string());
+        }
+      }
+    }
   }
+
 }

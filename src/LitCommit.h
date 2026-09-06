@@ -36,6 +36,9 @@ class LitCommit : public LitObject {
   // Return format name
   std::string_view Format() const;
 
+  // Return hex string form of commit's tree sha
+  const std::string& GetTreeSha() const;
+
   // Getter needed for accessing commit object's parsed data from
   // LitObjectStore.cc
   const Kvlm& GetKvlm() const {

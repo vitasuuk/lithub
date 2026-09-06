@@ -15,3 +15,7 @@ void LitCommit::Deserialize(const bytes& data) {
 std::string_view LitCommit::Format() const {
   return "commit";
 }
+
+const std::string& LitCommit::GetTreeSha() const {
+  return kvlm_.KvlmGetValue("tree");
+}

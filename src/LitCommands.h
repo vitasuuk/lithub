@@ -18,8 +18,19 @@ int CmdHashObject(const std::string& format,
 	              bool write);
 
 // lithub log - walks commit ancestry and prints commit history.
+// Temporarily accepts only commit sha, no reference support so far.
 int CmdLog(const std::string& commit_point);
 
+// lithub ls-tree - prints contents of the tree, optionally recursively.
+// Temporarily accepts only tree sha, no reference support so far.
 int CmdLsTree(const std::string& tree_sha, bool recurse);
+
+// lithub checkout - materializes the snapshot represented by commit (its files
+// and directories) in the filesystem. Passed directory should be EMPTY:
+//   result of simplification, git has complex data preservation / replacement
+//   mechanism that deletes / replaces only what is necessary !!!
+// Temporarily accepts only commit sha, no reference support so far.
+int CmdCheckout(const std::string& commit_sha, 
+                const std::filesystem::path& dir_path);
 
 #endif  // LIT_COMMANDS_H_
