@@ -4,6 +4,15 @@
 #include "LitObject.h"
 #include "LitKvlm.h"
 
+// Needed for identification purposes and comfortable parsing.
+// For example, used in lithub log to display commit info.
+struct CommitIdentity {
+  std::string author_name;
+  std::string email;
+  std::string datetime;
+  std::string timezone;
+};
+
 // Represents a commit object.
 // Commit's payload uses the KVLM format:
 /*  
@@ -39,11 +48,21 @@ class LitCommit : public LitObject {
   // Return hex string form of commit's tree sha
   const std::string& GetTreeSha() const;
 
+  // Return vector of hex string form of commit's parents' sha
+  std::vector<const std::string*> GetCommitParents() const;
+
+  // Return message
+  const std::string& GetCommitMessage() const;
+
+  // Return identity info of commit. Can be used for author and commiter
+  // fields.
+  CommitIdentity GetIdentityInfo(std::string_view key) const;
+
   // Getter needed for accessing commit object's parsed data from
   // LitObjectStore.cc
-  const Kvlm& GetKvlm() const {
-    return kvlm_;
-  }
+  // const Kvlm& GetKvlm() const {
+  //   return kvlm_;
+  // }
  
  private:
   Kvlm kvlm_;

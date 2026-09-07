@@ -6,15 +6,16 @@
 #include "LitObjectStore.h"
 
 #include <algorithm>
-
 #include <fstream>
+#include <unordered_set>
 #include <iostream>
 
 using std::filesystem::path;
 
 // Private helper methods performing recursion.
 namespace {
-  void CmdLogRecurse(LitRepository& repo, const std::string commit_sha);
+  void CmdLogRecurse(LitRepository& repo, const std::string& commit_sha,
+                     std::unordered_set<std::string>& seen);
 
   void CmdLsTreeRecurse(LitRepository& repo, const std::string& tree_sha,
                         bool recurse, const std::string& prefix = "");
@@ -73,14 +74,18 @@ int CmdHashObject(const std::string& format, const path& file_path,
 
 int CmdLog (const std::string& commit_point) {
   std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
-  LitRepository repo = repo_opt.value();
+  LitRepository& repo = repo_opt.value();
+  std::unordered_set<std::string> seen;
 
-  
+  CmdLogRecurse(repo, commit_point, seen);
+
+  return 0;
 }
 
 int CmdLsTree (const std::string& tree_sha, bool recurse) {
   std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
   LitRepository& repo = repo_opt.value();
+  
 
   CmdLsTreeRecurse(repo, tree_sha, recurse);
 
@@ -125,8 +130,49 @@ int CmdCheckout(const std::string& commit_sha,
 
 namespace {
 
-  void CmdLogRecurse(LitRepository& repo, const std::string commit_sha) {
+  void CmdLogRecurse(LitRepository& repo, const std::string& commit_sha,
+                     std::unordered_set<std::string>& seen) {
+    // Skip commits already visited through another merge branch.
+    if (seen.count(commit_sha) != 0) {
+      return;
+    }
+
+    seen.insert(commit_sha);
+
+    std::unique_ptr<LitObject> obj = ObjectRead(repo, commit_sha);
+    LitCommit* commit_obj = dynamic_cast<LitCommit*>(obj.get());
     
+    if (commit_obj == nullptr) {
+      throw std::runtime_error("Object is not a commit:" + commit_sha);
+    }
+
+    std::vector<const std::string*> parents = commit_obj->GetCommitParents();
+
+    std::cout << "commit " << commit_sha << '\n';
+    if (parents.size() > 1) {
+      std::cout << "Merge: ";
+
+      for (const std::string* parent : parents) {
+        std::cout << parent->substr(0, 7);
+      }
+
+      std::cout << '\n';
+    }
+
+    CommitIdentity author = commit_obj->GetIdentityInfo("author");
+    std::cout << "Author: " << author.author_name << " <"
+              << author.email << ">\n";
+    std::cout << "Date:   " << author.datetime << ' '
+              << author.timezone << '\n';
+    // @TODO tab before every line of commit message.
+    std::cout << "\n\t" << commit_obj->GetCommitMessage() << "\n\n";
+    
+    // Recurse up towards the initial commit. Handles merge logic.
+    // Initial commit has no parent field, GetCommitParents returns empty
+    // vector in that case - loop iterates 0 times.
+    for (const std::string* parent : parents) {
+      CmdLogRecurse(repo, *parent, seen);
+    }
   }
 
   void CmdLsTreeRecurse(LitRepository& repo, const std::string& tree_sha,
