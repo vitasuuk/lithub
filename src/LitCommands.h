@@ -33,4 +33,10 @@ int CmdLsTree(const std::string& tree_sha, bool recurse);
 int CmdCheckout(const std::string& commit_sha, 
                 const std::filesystem::path& dir_path);
 
+// lithub show-ref - accepts reference directory path relative to .lit,
+// recursively iterates given directory and all references paths and their
+// resolved SHA1.
+// If no directory path is given, lists all references in .lit/refs by default;
+int CmdRefList(const std::string& ref_dir);
+
 #endif  // LIT_COMMANDS_H_

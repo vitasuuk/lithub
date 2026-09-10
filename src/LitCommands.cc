@@ -1,6 +1,7 @@
 #include "LitBlob.h"
 #include "LitCommands.h"
 #include "LitCommit.h"
+#include "LitRefs.h"
 #include "LitRepository.h"
 #include "LitTree.h"
 #include "LitObjectStore.h"
@@ -9,10 +10,11 @@
 #include <fstream>
 #include <unordered_set>
 #include <iostream>
+#include <map>
 
 using std::filesystem::path;
 
-// Private helper methods performing recursion.
+// Private helper methods.
 namespace {
   void CmdLogRecurse(LitRepository& repo, const std::string& commit_sha,
                      std::unordered_set<std::string>& seen);
@@ -124,6 +126,19 @@ int CmdCheckout(const std::string& commit_sha,
  
   // Recurse to reconstruct full worktree
   CmdCheckoutRecurse(repo, *tree_obj, dir_path);
+
+  return 0;
+}
+
+int CmdRefList(const std::string& ref_dir) {
+  std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
+  LitRepository& repo = repo_opt.value();
+
+  std::map<std::string, std::string> ref_list = RefList(repo, ref_dir);
+
+  for (auto& pair : ref_list) {
+    std::cout << pair.second << ' ' << pair.first << '\n';
+  }
 
   return 0;
 }

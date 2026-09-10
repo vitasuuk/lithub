@@ -54,6 +54,12 @@ int main(int argc, char* argv[]) {
   argparse::ArgumentParser checkout_command("checkout");
   checkout_command.add_argument("commit");
   checkout_command.add_argument("dir_path");
+
+  // show-ref
+  argparse::ArgumentParser show_ref_command("show-ref");
+  show_ref_command.add_argument("ref_dir")
+    .nargs(argparse::nargs_pattern::optional)
+    .default_value("refs");
   
   program.add_subparser(init_command);
   program.add_subparser(cat_file_command);
@@ -104,6 +110,12 @@ int main(int argc, char* argv[]) {
 
       return CmdCheckout(commit, dir_path);
     }
+
+	  if (program.is_subcommand_used("show-ref")) {
+	    std::string ref_dir = show_ref_command.get<std::string>("ref_dir");
+
+      
+	  }
 
     std::cerr << program;
     return EXIT_FAILURE;
