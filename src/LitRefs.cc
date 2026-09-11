@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <map>
 
@@ -35,7 +36,7 @@ std::optional<std::string> RefResolve(LitRepository& repo,
   }
 
   std::string data;
-  std::getline(ref_file, data);
+  std::getline(ref_file, data);  // getline removes trailing \n
 
   if (data.rfind("ref: ", 0) == 0) {
     return RefResolve(repo, data.substr(5));
@@ -51,6 +52,18 @@ std::map<std::string, std::string> RefList(LitRepository& repo,
 
   RefListRecurse(repo, result, ref_dir_path);
   return result;
+}
+
+void RefCreate(LitRepository& repo, std::string& ref_path, std::string& sha) {
+  path ref_full_path = repo.RepoFile(true, ref_path);
+
+  std::ofstream file(ref_full_path);
+  if (!file) {
+    throw std::runtime_error("Could not write a reference: " + 
+      ref_full_path.string());
+  }
+
+  file << sha << '\n';
 }
 
 namespace {

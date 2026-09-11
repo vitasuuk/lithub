@@ -60,6 +60,17 @@ int main(int argc, char* argv[]) {
   show_ref_command.add_argument("ref_dir")
     .nargs(argparse::nargs_pattern::optional)
     .default_value("refs");
+
+  // tag
+  argparse::ArgumentParser tag_command("tag");
+  tag_command.add_argument("-a")
+    .default_value(false)
+    .implicit_value(true);
+  tag_command.add_argument("name")
+    .nargs(argparse::nargs_pattern::optional);
+  tag_command.add_argument("object")
+    .nargs(argparse::nargs_pattern::optional)
+    .default_value("HEAD");
   
   program.add_subparser(init_command);
   program.add_subparser(cat_file_command);
@@ -67,6 +78,7 @@ int main(int argc, char* argv[]) {
   program.add_subparser(log_command);
   program.add_subparser(ls_tree_command);
   program.add_subparser(checkout_command);
+  program.add_subparser(tag_command);
 
   try {
     program.parse_args(argc, argv);
@@ -111,11 +123,21 @@ int main(int argc, char* argv[]) {
       return CmdCheckout(commit, dir_path);
     }
 
-	  if (program.is_subcommand_used("show-ref")) {
-	    std::string ref_dir = show_ref_command.get<std::string>("ref_dir");
+    if (program.is_subcommand_used("show-ref")) {
+      std::string ref_dir = show_ref_command.get<std::string>("ref_dir");
+
+      return CmdRefList(ref_dir);
+    }
+
+    if (program.is_subcommand_used("tag")) {
+      bool create_tag_obj = tag_command.get<bool>("-a");
+      std::optional<std::string> name = 
+          tag_command.present<std::string>("name");
+      std::string object = tag_command.get<std::string>("object");
 
       
-	  }
+      
+    }
 
     std::cerr << program;
     return EXIT_FAILURE;

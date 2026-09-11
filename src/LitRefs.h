@@ -21,4 +21,7 @@ std::optional<std::string> RefResolve(LitRepository& repo,
 std::map<std::string, std::string> RefList(LitRepository& repo,
                                            std::string ref_dir = "refs");
 
+// Creates and writes a reference file to .lit/[reference path]
+void RefCreate(LitRepository& repo, std::string& ref_path, std::string& sha);
+
 #endif  // LIT_REFS_H_

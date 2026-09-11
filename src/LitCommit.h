@@ -58,12 +58,17 @@ class LitCommit : public LitObject {
   // fields.
   CommitIdentity GetIdentityInfo(std::string_view key) const;
 
-  // Getter needed for accessing commit object's parsed data from
-  // LitObjectStore.cc
-  // const Kvlm& GetKvlm() const {
-  //   return kvlm_;
-  // }
- 
+  // Getters for exposure of KVLM needed to set LitTag's KVLM state
+  // Only class itself or its children (LitTag) can call it.
+ protected:
+  Kvlm& GetMutableKvlm() {
+    return kvlm_;
+  }
+
+  const Kvlm& GetKvlm() const {  // nonmutable for accessing fields from LitTag
+    return kvlm_;
+  }
+
  private:
   Kvlm kvlm_;
 };

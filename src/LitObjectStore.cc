@@ -1,8 +1,10 @@
 #include "LitObjectStore.h"
 #include "LitBlob.h"
 #include "LitCommit.h"
+#include "LitTag.h"
 #include "LitTree.h"
 #include "LitRepository.h"
+#include "LitRefs.h"
 
 #include <openssl/sha.h>
 #include <zlib.h>
@@ -121,7 +123,7 @@ bytes Decompress(const bytes& data) {
   return result;
 }
 
-}
+}  // namespace
 
 std::string ObjectWrite(const LitObject& object, LitRepository* repo) {
   bytes data = object.Serialize();
@@ -237,17 +239,146 @@ std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
   if (format == "blob") {
     return std::make_unique<LitBlob>(data);
   } else if (format == "commit") {
-	return std::make_unique<LitCommit>(data);
+	  return std::make_unique<LitCommit>(data);
   } else if (format == "tree") {
-	return std::make_unique<LitTree>(data);
+	  return std::make_unique<LitTree>(data);
+  } else if (format == "tag") {
+    return std::make_unique<LitTag>(data);
   }
 
   throw std::runtime_error("Unsupported object type: " + format);
 }
 
-std::string ObjectFind(LitRepository&, const std::string& name,
-                       const std::string&, bool) {
-  return name;
+// Checks the passed string if it fits sha format, used in object reference
+// resolution to check if given by user name is already a SHA.
+bool IsPossibleSha(const std::string& name) {
+  if (name.size() < 4 || name.size() > 40) {
+    return false;
+  }
+
+  for (char ch : name) {
+    if (!std::isxdigit(static_cast<unsigned char>(ch))) {
+      return false;
+    }
+  }
+
+  return true;
+} 
+
+// Resolves name to an object hash in repo.
+// This method is aware of:
+// - short and long hashes
+// - tags
+// - branches
+// - remote branches [?]
+std::vector<std::string> ObjectResolve(LitRepository& repo,
+                                       const std::string& name) {
+  if (name.empty()) {
+    return {};
+  }
+
+  if (name == "HEAD") {
+    auto sha = RefResolve(repo, name);
+    if (sha) {
+      return {sha.value()};
+    }
+    return {};
+  }
+
+  std::vector<std::string> candidates;
+  
+  // Try if it is already sha (including partial)
+  if (IsPossibleSha(name)) {
+    std::string prefix = name.substr(0, 2);
+
+    path possible_path = repo.RepoDir(false, "objects", prefix);
+    if (!possible_path.empty()) {
+      std::string remain = name.substr(2);
+      for (auto& file : std::filesystem::directory_iterator(possible_path)) {
+        std::string file_name = file.path().filename().string();
+
+        if(file_name.rfind(remain, 0) == 0) {
+          candidates.push_back(prefix + file_name);
+        }
+      }
+    }
+  }
+
+  // Also check references
+  auto check_tag = RefResolve(repo, "refs/tags/" + name);
+  if (check_tag) {
+    candidates.push_back(check_tag.value());
+  }
+
+  auto check_branch = RefResolve(repo, "refs/heads/" + name);
+  if (check_branch) {
+    candidates.push_back(check_branch.value());
+  }
+
+  auto check_remote = RefResolve(repo, "refs/remotes/" + name);
+  if (check_remote) {
+    candidates.push_back(check_remote.value());
+  }
+  
+  return candidates;
+}
+
+std::optional<std::string> ObjectFind(LitRepository& repo, 
+                                      const std::string& name,
+                                      const std::string& format, 
+                                      bool follow) {
+  std::vector<std::string> sha_candidates = ObjectResolve(repo, name);
+  
+  if (sha_candidates.size() == 0) {
+    throw std::runtime_error("No reference found: " + name);
+  }
+
+  if (sha_candidates.size() > 1) {
+    std::ostringstream message;
+    message << "Ambiguous reference " + name + ":\n";
+
+    for(const std::string& cand : sha_candidates) {
+      message << "  " << cand << '\n';
+    }
+
+    throw std::runtime_error(message.str());
+  }
+
+  std::string sha = sha_candidates[0];
+  
+  if (format.empty()) {
+    return sha;
+  }
+
+  while(true) {
+    std::unique_ptr<LitObject> obj = ObjectRead(repo, sha);
+
+    if (!obj) {
+      throw std::runtime_error("Object not found: " + sha);
+    }
+
+    if (obj->Format() == format) {
+      return sha;
+    }
+
+    if (!follow) {
+      return std::nullopt;
+    }
+
+    // Follow formats
+    if (obj->Format() == "tag") {
+      LitTag* tag_obj = dynamic_cast<LitTag*>(obj.get());
+
+      sha = tag_obj->GetObjectSha();
+    } else if (obj->Format() == "commit" && format == "tree") {
+      LitCommit* commit_obj = dynamic_cast<LitCommit*>(obj.get());
+
+      sha = commit_obj->GetTreeSha();
+    } else {
+      return std::nullopt;
+    }
+  }
+
 }
 
 std::string ObjectHash(std::istream& input, const std::string& format,

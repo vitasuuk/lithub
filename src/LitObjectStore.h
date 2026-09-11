@@ -40,12 +40,15 @@ std::unique_ptr<LitObject> ObjectRead(LitRepository& repo,
 
 // Resolves user's object name into an object SHA1.
 // [Placeholder currently, to be implemented]
-std::string ObjectFind(LitRepository& repo, const std::string& name,
-                       const std::string& format, bool follow = true);
+std::optional<std::string> ObjectFind(LitRepository& repo, 
+                                      const std::string& name,
+                                      const std::string& format, 
+                                      bool follow = true);
 
 // Reads raw bytes from input, constructs requested object type and passes to
 // ObjectWrite()
-std::string ObjectHash(std::istream& input, const std::string& format,
+std::string ObjectHash(std::istream& input,
+                       const std::string& format,
                        LitRepository* repo = nullptr);
 		  
 #endif  // LIT_OBJECT_STORE_H_
