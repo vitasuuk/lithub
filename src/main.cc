@@ -1,4 +1,4 @@
-#include "LitCommands.h"
+#include "commands/LitCommands.h"
 
 #include <argparse/argparse.hpp>
 
@@ -6,6 +6,7 @@
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 
 using std::filesystem::path;
@@ -71,6 +72,20 @@ int main(int argc, char* argv[]) {
   tag_command.add_argument("object")
     .nargs(argparse::nargs_pattern::optional)
     .default_value("HEAD");
+
+  // rev-parse
+  argparse::ArgumentParser rev_parse_command("rev-parse");
+  rev_parse_command.add_argument("--lithub-type")
+    .default_value("")
+	  .choices("blob", "commit", "tag", "tree");
+  rev_parse_command.add_argument("name");
+
+  // ls-files
+  argparse::ArgumentParser ls_files_command("ls-files");
+  ls_files_command.add_argument("--verbose")
+    .default_value(false)
+	  .implicit_value(true);
+
   
   program.add_subparser(init_command);
   program.add_subparser(cat_file_command);
@@ -79,6 +94,7 @@ int main(int argc, char* argv[]) {
   program.add_subparser(ls_tree_command);
   program.add_subparser(checkout_command);
   program.add_subparser(tag_command);
+  program.add_subparser(rev_parse_command);
 
   try {
     program.parse_args(argc, argv);
@@ -136,7 +152,20 @@ int main(int argc, char* argv[]) {
       std::string object = tag_command.get<std::string>("object");
 
       
-      
+      return CmdTag(create_tag_obj, name, object);
+    }
+
+    if (program.is_subcommand_used("rev-parse")) {
+	    std::string type = rev_parse_command.get<std::string>("--lithub-type");
+      std::string name = rev_parse_command.get<std::string>("name");
+
+      return CmdRevParse(type, name);
+    }
+
+    if (program.is_subcommand_used("ls-files")) {
+      bool verbose = ls_files_command.get<bool>("--verbose");
+
+      return CmdLsFiles(verbose);
     }
 
     std::cerr << program;

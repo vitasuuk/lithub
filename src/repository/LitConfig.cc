@@ -1,4 +1,4 @@
-#include "LitConfig.h"
+#include "repository/LitConfig.h"
 
 #include <fstream>
 #include <stdexcept>

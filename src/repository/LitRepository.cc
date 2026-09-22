@@ -1,7 +1,10 @@
-#include "LitRepository.h"
-#include "LitConfig.h"
+#include "repository/LitConfig.h"
+#include "repository/LitRepository.h"
 
+#include <filesystem>
 #include <fstream>
+#include <optional>
+#include <string>
 #include <stdexcept>
 
 using std::filesystem::canonical;

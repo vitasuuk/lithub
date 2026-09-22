@@ -1,7 +1,7 @@
 #ifndef LIT_REPOSITORY_H_
 #define LIT_REPOSITORY_H_
 
-#include "LitConfig.h"
+#include "repository/LitConfig.h"
 
 #include <filesystem>
 #include <optional>

@@ -1,4 +1,4 @@
-#include "LitRefs.h"
+#include "repository/LitRefs.h"
 
 #include <filesystem>
 #include <fstream>
@@ -13,6 +13,10 @@ using std::filesystem::is_directory;
 using std::filesystem::directory_iterator;
 
 namespace {
+
+void RefListRecurse(LitRepository& repo,
+                    std::map<std::string, std::string>& list,
+                    path& ref_path);
 
 }
 

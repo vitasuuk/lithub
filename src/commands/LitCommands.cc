@@ -1,17 +1,22 @@
-#include "LitBlob.h"
-#include "LitCommands.h"
-#include "LitCommit.h"
-#include "LitRefs.h"
-#include "LitRepository.h"
-#include "LitTag.h"
-#include "LitTree.h"
-#include "LitObjectStore.h"
+#include "commands/LitCommands.h"
+#include "objects/LitBlob.h"
+#include "objects/LitCommit.h"
+#include "objects/LitObjectStore.h"
+#include "objects/LitTag.h"
+#include "objects/LitTree.h"
+#include "repository/LitRefs.h"
+#include "repository/LitRepository.h"
+#include "index/LitIndex.h"
 
 #include <algorithm>
 #include <fstream>
 #include <unordered_set>
 #include <iostream>
 #include <map>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <vector>
 
 using std::filesystem::path;
 
@@ -33,6 +38,8 @@ namespace {
                  const std::string& name,
                  const std::string& ref,
                  bool create_tag_object);
+
+  std::string FormatTimestamp(std::uint32_t seconds);
 }
 
 int CmdInit(const path& path) {
@@ -196,6 +203,74 @@ int CmdTag(bool create_tag_obj,
   return 0;
 }
 
+int CmdRevParse(std::string type, std::string name) {
+  std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
+  LitRepository& repo = repo_opt.value();
+
+  auto sha = ObjectFind(repo, name, type);
+  if (!sha) {
+    throw std::runtime_error("Cannot resolve " + name + 
+      (type.empty() ? "" : " to type" + type));
+  }
+
+  std::cout << sha.value() << '\n';
+  return 0;
+}
+
+int CmdLsFiles(bool verbose) {
+  std::optional<LitRepository> repo_opt = LitRepository::RepoFind(".");
+  LitRepository& repo = repo_opt.value();
+  LitIndex index = IndexRead(repo);
+
+  if (verbose) {
+    std::cout << "Index file format v" + index.GetVersion() << "containing "
+              << index.GetEntries().size() << " entries.";
+  }
+
+  for (const auto& entry : index.GetEntries()) {
+    std::cout << entry.name;
+
+    if (verbose) {
+      std::string entry_type;
+
+      if (entry.mode_type == 0b1000) {
+        entry_type = "regular file";
+      } else if (entry.mode_type == 0b1010) {
+        entry_type = "symlink";
+      } else if (entry.mode_type == 0b1110) {
+        entry_type = "git link";
+      } else {
+        entry_type = "unknown";
+      }
+
+      std::cout << "  " << entry_type << " with perms: "
+                << std::oct << entry.mode_perms << std::dec << '\n';
+
+      std::cout << "  on blob: " << entry.sha << '\n';
+
+      std::cout << "  created: "
+                << FormatTimestamp(entry.ctime.first)
+                << "." << entry.ctime.second
+                << ", modified: "
+                << FormatTimestamp(entry.mtime.first)
+                << "." << entry.mtime.second
+                << '\n';
+
+      std::cout << "  device: " << entry.dev
+                << ", inode: " << entry.ino << '\n';
+
+      std::cout << "  user: " << entry.uid
+                << "  group: " << entry.gid << '\n';
+
+      std::cout << "  flags: stage=" << entry.flag_stage
+                << " assume_valid=" << entry.flag_assume_valid
+                << '\n';
+    }
+  }
+
+  return 0;
+}
+
 namespace {
 
   void CmdLogRecurse(LitRepository& repo, const std::string& commit_sha,
@@ -347,4 +422,19 @@ namespace {
     }
   }
 
+  std::string FormatTimestamp(std::uint32_t seconds) {
+    std::time_t time = static_cast<std::time_t>(seconds);
+    std::tm time_info{};
+
+    #ifdef _WIN32
+      localtime_s(&time_info, &time);
+    #else
+      localtime_r(&time, &time_info);
+    #endif
+
+    std::ostringstream oss;
+    oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S");
+
+    return oss.str();
+  }
 }

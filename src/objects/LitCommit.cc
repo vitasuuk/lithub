@@ -1,9 +1,11 @@
-#include "LitCommit.h"
+#include "objects/LitCommit.h"
 
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace {
   // Converts timezone format into seconds offset needed for epoch time

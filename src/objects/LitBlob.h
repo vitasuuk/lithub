@@ -1,7 +1,9 @@
 #ifndef LIT_BLOB_H_
 #define LIT_BLOB_H_
 
-#include "LitObject.h"
+#include "objects/LitObject.h"
+
+#include <string_view>
 
 // Represents a blob object, containing only raw contents of file.
 //

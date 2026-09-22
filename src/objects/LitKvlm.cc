@@ -1,6 +1,7 @@
-#include "LitKvlm.h"
+#include "objects/LitKvlm.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <stdexcept>
 
 Kvlm KvlmParse(const bytes& raw) {

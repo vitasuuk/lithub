@@ -15,11 +15,12 @@
 #ifndef LIT_OBJECT_STORE_H_
 #define LIT_OBJECT_STORE_H_
 
-#include "LitObject.h"
+#include "objects/LitObject.h"
 
-#include <string>
-#include <memory>
 #include <istream>
+#include <memory>
+#include <optional>
+#include <string>
 
 class LitRepository;
 

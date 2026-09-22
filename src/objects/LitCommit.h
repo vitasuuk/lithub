@@ -1,8 +1,12 @@
 #ifndef LIT_COMMIT_H_
 #define LIT_COMMIT_H_
 
-#include "LitObject.h"
-#include "LitKvlm.h"
+#include "objects/LitKvlm.h"
+#include "objects/LitObject.h"
+
+#include <string>
+#include <string_view>
+#include <vector>
 
 // Needed for identification purposes and comfortable parsing.
 // For example, used in lithub log to display commit info.

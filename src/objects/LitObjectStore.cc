@@ -1,24 +1,27 @@
-#include "LitObjectStore.h"
-#include "LitBlob.h"
-#include "LitCommit.h"
-#include "LitTag.h"
-#include "LitTree.h"
-#include "LitRepository.h"
-#include "LitRefs.h"
+#include "objects/LitBlob.h"
+#include "objects/LitCommit.h"
+#include "objects/LitObjectStore.h"
+#include "objects/LitTag.h"
+#include "objects/LitTree.h"
+#include "repository/LitRefs.h"
+#include "repository/LitRepository.h"
 
 #include <openssl/sha.h>
 #include <zlib.h>
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using std::filesystem::path;
 

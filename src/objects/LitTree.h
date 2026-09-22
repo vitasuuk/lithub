@@ -1,7 +1,7 @@
 #ifndef LIT_TREE_H_
 #define LIT_TREE_H_
 
-#include "LitObject.h"
+#include "objects/LitObject.h"
 
 #include <string>
 #include <string_view>

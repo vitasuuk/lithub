@@ -1,12 +1,11 @@
 #ifndef LIT_REFS_H_
 #define LIT_REFS_H_
 
-#include "LitRepository.h"
+#include "repository/LitRepository.h"
 
-#include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
-#include <map>
 
 // Recursive reference resolver, which follows the reference files to find and
 // return SHA-1 identifier.

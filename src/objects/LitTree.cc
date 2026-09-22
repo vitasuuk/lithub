@@ -1,9 +1,12 @@
-#include "LitTree.h"
+#include "objects/LitTree.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 // Private Helper Methods
 namespace {

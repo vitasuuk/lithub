@@ -1,4 +1,4 @@
-#include "LitBlob.h"
+#include "objects/LitBlob.h"
 
 LitBlob::LitBlob(const bytes& data) {
   Deserialize(data);

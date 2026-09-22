@@ -1,7 +1,10 @@
 #ifndef LIT_TAG_H_
 #define LIT_TAG_H_
 
-#include "LitCommit.h"
+#include "objects/LitCommit.h"
+
+#include <string>
+#include <string_view>
 
 // LitTag is practically indentical to LitCommit object.
 // @TODO figure out the way to construct it since we won't have
