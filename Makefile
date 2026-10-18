@@ -1,14 +1,11 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Iexternal/argparse/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic \
+	-Iexternal/argparse/include \
+	-Isrc
 
 TARGET = build/lithub
 
-SOURCES = src/main.cc \
-          src/LitCommands.cc \
-          src/LitRepository.cc \
-          src/LitConfig.cc \
-          src/LitBlob.cc \
-          src/LitObjectStore.cc
+SOURCES = $(wildcard src/*.cc src/*/*.cc)
 
 OBJECTS = $(SOURCES:src/%.cc=build/%.o)
 
@@ -17,8 +14,10 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) -lcrypto -lz
 
 build/%.o: src/%.cc
-	mkdir -p build
+	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -rf build
+
+.PHONY: clean

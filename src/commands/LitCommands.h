@@ -44,10 +44,12 @@ int CmdTag(bool create_tag_obj,
            std::optional<std::string> name,
            std::string object);
 
-// 
+// Command to solve references. With optional --lithub--type argument
+// looks for the SHA of given object type by following objects like tags/commits
 int CmdRevParse(std::string type, std::string name);
 
-// Displays the names of files in the staging area 
+// Displays the names of files in the staging area.
+// Additionally displays detailed info if --verbose flag is used
 int CmdLsFiles(bool verbose);
 
 #endif  // LIT_COMMANDS_H_

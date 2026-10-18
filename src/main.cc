@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (program.is_subcommand_used("rev-parse")) {
-	    std::string type = rev_parse_command.get<std::string>("--lithub-type");
+      std::string type = rev_parse_command.get<std::string>("--lithub-type");
       std::string name = rev_parse_command.get<std::string>("name");
 
       return CmdRevParse(type, name);
