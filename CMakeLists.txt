@@ -14,12 +14,12 @@ add_executable(lithub
 	
 	src/commands/LitCommands.cc
 	
+	src/repository/LitConfig.cc
 	src/repository/LitRepository.cc
 	src/repository/LitRefs.cc
 	
 	src/objects/LitBlob.cc
     src/objects/LitCommit.cc
-    src/objects/LitTag.cc
     src/objects/LitTree.cc
     src/objects/LitKvlm.cc
     src/objects/LitObjectStore.cc
