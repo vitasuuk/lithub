@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
 
   // rev-parse
   argparse::ArgumentParser rev_parse_command("rev-parse");
+  // No default: argparse validates defaults against choices, and "" isn't one.
   rev_parse_command.add_argument("--lithub-type")
-    .default_value("")
 	  .choices("blob", "commit", "tag", "tree");
   rev_parse_command.add_argument("name");
 
@@ -187,7 +187,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (program.is_subcommand_used("rev-parse")) {
-      std::string type = rev_parse_command.get<std::string>("--lithub-type");
+      std::string type =
+          rev_parse_command.present<std::string>("--lithub-type").value_or("");
       std::string name = rev_parse_command.get<std::string>("name");
 
       return CmdRevParse(type, name);

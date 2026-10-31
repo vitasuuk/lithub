@@ -52,6 +52,12 @@ namespace {
 
     entry.mode = std::string(data.begin() + pos, space_pos);
 
+    // Git writes directory mode as "40000", normalize to 6 chars so
+    // the rest of lithub can compare against "040000".
+    if (entry.mode.size() == 5) {
+      entry.mode = "0" + entry.mode;
+    }
+
     auto null_pos = std::find(data.begin() + pos, data.end(),
         static_cast<std::uint8_t>('\0'));
 

@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Writes build/compile_commands.json, which tells the editor the exact
+# include paths and flags for every file.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 

@@ -1,0 +1,16 @@
+# Build output
+build/
+
+# Accidental in-source CMake builds (cmake . instead of cmake -B build)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Editor / IDE
+.vscode/
+.idea/
+.cache/
+*.swp
+
+# lithub repositories created while trying commands out
+.lit/
