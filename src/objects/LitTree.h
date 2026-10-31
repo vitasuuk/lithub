@@ -35,6 +35,12 @@ class LitTree : public LitObject {
     return entries_;
   }
 
+  // Used when building trees from the index (lithub commit).
+  // Order doesn't matter, Serialize sorts entries into canonical order.
+  void AddEntry(const TreeEntry& entry) {
+    entries_.push_back(entry);
+  }
+
   std::string_view Format() const;
 
  private:

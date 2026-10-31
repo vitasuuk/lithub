@@ -1,8 +1,13 @@
 #include "index/LitIndex.h"
 
+#include <sys/stat.h>
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <stdexcept>
 
 namespace {
 // Github index disk format specifically uses big-endian representation.
@@ -48,6 +53,31 @@ std::string BytesToHex(const bytes& data,
   return oss.str();
 }
 
+// Writers mirror the readers above: big-endian, most significant byte first.
+void WriteUint32BE(bytes& data, std::uint32_t value) {
+  data.push_back(static_cast<std::uint8_t>(value >> 24));
+  data.push_back(static_cast<std::uint8_t>(value >> 16));
+  data.push_back(static_cast<std::uint8_t>(value >> 8));
+  data.push_back(static_cast<std::uint8_t>(value));
+}
+
+void WriteUint16BE(bytes& data, std::uint16_t value) {
+  data.push_back(static_cast<std::uint8_t>(value >> 8));
+  data.push_back(static_cast<std::uint8_t>(value));
+}
+
+// Appends 40-char hex SHA as its 20 raw bytes.
+void WriteHexAsBytes(bytes& data, const std::string& hex) {
+  if (hex.size() != 40) {
+    throw std::runtime_error("Invalid SHA1 in index entry: " + hex);
+  }
+
+  for (std::size_t i = 0; i < hex.size(); i += 2) {
+    data.push_back(static_cast<std::uint8_t>(
+        std::stoul(hex.substr(i, 2), nullptr, 16)));
+  }
+}
+
 }  // namespace
 
 
@@ -61,6 +91,63 @@ std::uint16_t LitIndex::GetVersion() const {
 
 const std::vector<LitIndexEntry>& LitIndex::GetEntries() const {
   return entries_;
+}
+
+std::vector<LitIndexEntry>& LitIndex::GetMutableEntries() {
+  return entries_;
+}
+
+const bytes LitIndex::Serialize() const {
+  bytes data = {'D', 'I', 'R', 'C'};
+
+  WriteUint32BE(data, version_);
+  WriteUint32BE(data, static_cast<std::uint32_t>(entries_.size()));
+
+  for (const LitIndexEntry& entry : entries_) {
+    std::size_t entry_start = data.size();
+
+    WriteUint32BE(data, entry.ctime.first);
+    WriteUint32BE(data, entry.ctime.second);
+    WriteUint32BE(data, entry.mtime.first);
+    WriteUint32BE(data, entry.mtime.second);
+
+    WriteUint32BE(data, entry.dev);
+    WriteUint32BE(data, entry.ino);
+
+    // Mode takes 4 bytes, upper two are unused.
+    WriteUint16BE(data, 0);
+    WriteUint16BE(data, static_cast<std::uint16_t>(
+        (entry.mode_type << 12) | entry.mode_perms));
+
+    WriteUint32BE(data, entry.uid);
+    WriteUint32BE(data, entry.gid);
+    WriteUint32BE(data, entry.file_size);
+
+    WriteHexAsBytes(data, entry.sha);
+
+    // Merge back two flags and name length into the same two bytes.
+    // flag_stage is already stored in its bit position (masked, not shifted).
+    std::uint16_t name_length = entry.name.size() >= 0x0FFF
+        ? 0x0FFF
+        : static_cast<std::uint16_t>(entry.name.size());
+
+    std::uint16_t flags = (entry.flag_assume_valid ? 0x8000 : 0) |
+                          entry.flag_stage |
+                          name_length;
+
+    WriteUint16BE(data, flags);
+
+    data.insert(data.end(), entry.name.begin(), entry.name.end());
+    data.push_back('\0');
+
+    // Same padding rule as in Deserialize.
+    std::size_t entry_size = data.size() - entry_start;
+    std::size_t padding = (8 - (entry_size % 8)) % 8;
+
+    data.insert(data.end(), padding, 0);
+  }
+
+  return data;
 }
 
 void LitIndex::Deserialize(const bytes& data) {
@@ -213,7 +300,10 @@ LitIndex IndexRead(LitRepository& repo) {
   }
 
   std::ifstream file(index_path, std::ios::binary);
-  
+  if (!file) {
+    throw std::runtime_error("Failed to open index: " + index_path.string());
+  }
+
   file.seekg(0, std::ios::end);
   std::streamsize file_size = file.tellg();
 
@@ -236,4 +326,59 @@ LitIndex IndexRead(LitRepository& repo) {
 
   LitIndex index;
   index.Deserialize(index_data);
+
+  return index;
+}
+
+void IndexWrite(LitRepository& repo, const LitIndex& index) {
+  std::filesystem::path index_path = repo.RepoFile(true, "index");
+  bytes data = index.Serialize();
+
+  std::ofstream file(index_path, std::ios::binary | std::ios::trunc);
+  if (!file) {
+    throw std::runtime_error("Failed to open index: " + index_path.string());
+  }
+
+  file.write(reinterpret_cast<const char*>(data.data()),
+      static_cast<std::streamsize>(data.size()));
+
+  if (!file) {
+    throw std::runtime_error("Failed to write index: " + index_path.string());
+  }
+}
+
+LitIndexEntry IndexEntryFromFile(const std::filesystem::path& file_path,
+                                 const std::string& name,
+                                 const std::string& sha) {
+  struct stat st{};
+
+  if (::stat(file_path.c_str(), &st) != 0) {
+    throw std::runtime_error("Failed to stat file: " + file_path.string());
+  }
+
+  LitIndexEntry entry;
+
+  entry.ctime = {static_cast<std::uint32_t>(st.st_ctim.tv_sec),
+                 static_cast<std::uint32_t>(st.st_ctim.tv_nsec)};
+  entry.mtime = {static_cast<std::uint32_t>(st.st_mtim.tv_sec),
+                 static_cast<std::uint32_t>(st.st_mtim.tv_nsec)};
+
+  entry.dev = static_cast<std::uint32_t>(st.st_dev);
+  entry.ino = static_cast<std::uint32_t>(st.st_ino);
+
+  // Only regular files are supported for now. Git only distinguishes
+  // executable (755) and non-executable (644) files.
+  entry.mode_type = 0b1000;
+  entry.mode_perms = (st.st_mode & S_IXUSR) ? 0755 : 0644;
+
+  entry.uid = static_cast<std::uint32_t>(st.st_uid);
+  entry.gid = static_cast<std::uint32_t>(st.st_gid);
+  entry.file_size = static_cast<std::uint32_t>(st.st_size);
+
+  entry.sha = sha;
+  entry.flag_assume_valid = false;
+  entry.flag_stage = 0;
+  entry.name = name;
+
+  return entry;
 }

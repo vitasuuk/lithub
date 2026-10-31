@@ -32,7 +32,17 @@ class LitRepository {
   // Otherwise, returns std::nullopt.
   static std::optional<LitRepository> RepoFind(const std::filesystem::path& path,
                                                bool required = true);
-  
+
+  // Root of the working tree (parent directory of .lit)
+  const std::filesystem::path& Worktree() const {
+    return worktree_;
+  }
+
+  // Path to the .lit directory itself
+  const std::filesystem::path& Litdir() const {
+    return litdir_;
+  }
+
   /*
     Implementations of variadic methods in .h file for other
     .cc files to be able to use them. Refer to visibility of

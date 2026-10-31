@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 
 // INI-style configuration reader/writer used for .lit/config
@@ -26,8 +27,22 @@ class LitConfig {
            const std::string& key,
            const std::string& value);
   
+  // Returns true if given section contains the key.
+  bool Has(const std::string& section,
+           const std::string& key) const;
+
+  // Returns "Name <email>" built from [user] name and email,
+  // or nullopt if either is missing.
+  std::optional<std::string> UserIdentity() const;
+
   // Builds and returns config object with default values.
   static LitConfig DefaultConfig();
+
+  // Reads the user's global config, same files git uses:
+  //   $XDG_CONFIG_HOME/git/config (or ~/.config/git/config)
+  //   ~/.gitconfig
+  // Missing files are skipped.
+  static LitConfig GlobalConfig();
 
  private:
   using Section = std::map<std::string, std::string>;

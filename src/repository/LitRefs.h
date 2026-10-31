@@ -23,4 +23,8 @@ std::map<std::string, std::string> RefList(LitRepository& repo,
 // Creates and writes a reference file to .lit/[reference path]
 void RefCreate(LitRepository& repo, std::string& ref_path, std::string& sha);
 
+// Returns the name of the branch HEAD points to (e.g. "master").
+// Returns nullopt if HEAD is detached (contains a raw SHA).
+std::optional<std::string> BranchGetActive(LitRepository& repo);
+
 #endif  // LIT_REFS_H_

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <vector>
 
 using std::filesystem::path;
 
@@ -86,15 +87,39 @@ int main(int argc, char* argv[]) {
     .default_value(false)
 	  .implicit_value(true);
 
-  
+  // status
+  argparse::ArgumentParser status_command("status");
+
+  // rm
+  argparse::ArgumentParser rm_command("rm");
+  rm_command.add_argument("path")
+    .nargs(argparse::nargs_pattern::at_least_one);
+
+  // add
+  argparse::ArgumentParser add_command("add");
+  add_command.add_argument("path")
+    .nargs(argparse::nargs_pattern::at_least_one);
+
+  // commit
+  argparse::ArgumentParser commit_command("commit");
+  commit_command.add_argument("-m")
+    .required();
+
+
   program.add_subparser(init_command);
   program.add_subparser(cat_file_command);
   program.add_subparser(hash_object_command);
   program.add_subparser(log_command);
   program.add_subparser(ls_tree_command);
   program.add_subparser(checkout_command);
+  program.add_subparser(show_ref_command);
   program.add_subparser(tag_command);
   program.add_subparser(rev_parse_command);
+  program.add_subparser(ls_files_command);
+  program.add_subparser(status_command);
+  program.add_subparser(rm_command);
+  program.add_subparser(add_command);
+  program.add_subparser(commit_command);
 
   try {
     program.parse_args(argc, argv);
@@ -123,6 +148,12 @@ int main(int argc, char* argv[]) {
       path file_path = hash_object_command.get<std::string>("file");
 
       return CmdHashObject(format, file_path, write);
+    }
+
+    if (program.is_subcommand_used("log")) {
+      std::string commit = log_command.get<std::string>("commit");
+
+      return CmdLog(commit);
     }
 
 	  if (program.is_subcommand_used("ls-tree")) {
@@ -166,6 +197,30 @@ int main(int argc, char* argv[]) {
       bool verbose = ls_files_command.get<bool>("--verbose");
 
       return CmdLsFiles(verbose);
+    }
+
+    if (program.is_subcommand_used("status")) {
+      return CmdStatus();
+    }
+
+    if (program.is_subcommand_used("rm")) {
+      std::vector<std::string> paths =
+          rm_command.get<std::vector<std::string>>("path");
+
+      return CmdRm(paths);
+    }
+
+    if (program.is_subcommand_used("add")) {
+      std::vector<std::string> paths =
+          add_command.get<std::vector<std::string>>("path");
+
+      return CmdAdd(paths);
+    }
+
+    if (program.is_subcommand_used("commit")) {
+      std::string message = commit_command.get<std::string>("-m");
+
+      return CmdCommit(message);
     }
 
     std::cerr << program;

@@ -70,6 +70,23 @@ void RefCreate(LitRepository& repo, std::string& ref_path, std::string& sha) {
   file << sha << '\n';
 }
 
+std::optional<std::string> BranchGetActive(LitRepository& repo) {
+  std::ifstream head_file(repo.RepoPath("HEAD"));
+  if (!head_file) {
+    throw std::runtime_error("Could not read HEAD.");
+  }
+
+  std::string head;
+  std::getline(head_file, head);
+
+  const std::string prefix = "ref: refs/heads/";
+  if (head.rfind(prefix, 0) == 0) {
+    return head.substr(prefix.size());
+  }
+
+  return std::nullopt;
+}
+
 namespace {
 
   void RefListRecurse (LitRepository& repo,

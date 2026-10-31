@@ -97,7 +97,7 @@ bytes LitTree::Serialize() const {
 
   bytes result;
 
-  for (const TreeEntry& entry : entries_) {
+  for (const TreeEntry& entry : sorted_entries) {
     result.insert(result.end(), entry.mode.begin(), entry.mode.end());
     result.push_back(' ');
 

@@ -62,6 +62,18 @@ class LitCommit : public LitObject {
   // fields.
   CommitIdentity GetIdentityInfo(std::string_view key) const;
 
+  // Builders used to construct a commit/tag from scratch (lithub commit,
+  // lithub tag -a). Fields are appended in call order, which is preserved
+  // on serialization.
+  void AddKvlmField(const std::string& key,
+                    const std::string& value) {
+    kvlm_.fields.push_back({key, value});
+  }
+
+  void SetKvlmMessage(const std::string& message) {
+    kvlm_.message = message;
+  }
+
   // Getters for exposure of KVLM needed to set LitTag's KVLM state
   // Only class itself or its children (LitTag) can call it.
  protected:

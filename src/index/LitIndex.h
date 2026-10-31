@@ -4,6 +4,7 @@
 #include "repository/LitRepository.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -55,8 +56,15 @@ class LitIndex {
 
   const std::vector<LitIndexEntry>& GetEntries() const;
 
+  // Used by rm/add to modify the staging area.
+  std::vector<LitIndexEntry>& GetMutableEntries();
+
   void Deserialize(const bytes& data);
 
+  // Inverse of Deserialize: header, then every entry padded to a multiple
+  // of 8 bytes.
+  // Note: real git also appends a SHA1 checksum of the whole file,
+  // lithub (like wyag) neither writes nor verifies it.
   const bytes Serialize() const;
 
  private:
@@ -66,6 +74,13 @@ class LitIndex {
 
 LitIndex IndexRead(LitRepository& repo);
 
-void IndexWrite(LitRepository& repo, LitIndex& index);
+void IndexWrite(LitRepository& repo, const LitIndex& index);
+
+// Builds an index entry for a regular file from its filesystem metadata
+// (stat). name is the path relative to the worktree root ("src/main.cc").
+// POSIX only (relies on stat's nanosecond timestamps).
+LitIndexEntry IndexEntryFromFile(const std::filesystem::path& file_path,
+                                 const std::string& name,
+                                 const std::string& sha);
 
 #endif  // LIT_INDEX_H_

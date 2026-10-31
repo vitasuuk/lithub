@@ -17,15 +17,6 @@ class LitTag : public LitCommit {
 	return "tag";
   }
 
-  void AddKvlmField(const std::string& key,
-                    const std::string& value) {
-    GetMutableKvlm().fields.push_back({key, value});
-  }
-
-  void SetKvlmMessage(const std::string& message) {
-    GetMutableKvlm().message = message;
-  }
-
   const std::string& GetObjectSha() const {
     return GetKvlm().KvlmGetValue("object");
   }

@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 // lithub init - creates repository at given path
 int CmdInit(const std::filesystem::path& path);
@@ -51,5 +52,25 @@ int CmdRevParse(std::string type, std::string name);
 // Displays the names of files in the staging area.
 // Additionally displays detailed info if --verbose flag is used
 int CmdLsFiles(bool verbose);
+
+// lithub status - prints active branch, then changes between HEAD and the
+// index (staged), and between the index and the worktree (unstaged and
+// untracked files).
+// Note: ignore rules are not applied yet, every untracked file is listed.
+int CmdStatus();
+
+// lithub rm - removes files from the index AND deletes them from the
+// worktree. Unlike git, doesn't check whether the files have unsaved
+// changes before deleting.
+int CmdRm(const std::vector<std::string>& paths);
+
+// lithub add - hashes files into blobs and stages them in the index,
+// replacing existing entries for the same paths.
+int CmdAdd(const std::vector<std::string>& paths);
+
+// lithub commit - builds trees from the index, creates a commit object
+// on top of HEAD and moves the active branch (or detached HEAD) to it.
+// Author identity is read from git's global config (user.name, user.email).
+int CmdCommit(const std::string& message);
 
 #endif  // LIT_COMMANDS_H_
